@@ -970,8 +970,8 @@ create_distance_matrix = function(segments, gamma) {
 #'
 #' @export
 runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, gender, SNPpos, chromosomes, chrnames, sexchromosomes, failedqualitycheck = F,
-                    distancepng = NA, copynumberprofilespng = NA, nonroundedprofilepng = NA, aberrationreliabilitypng = NA, gamma = 0.55,
-                    rho_manual = NA, psi_manual = NA, pdfPlot = F, y_limit = 5, circos=NA) {
+                    distance = NULL, copynumberprofile = NULL, nonroundedprofile = NULL, aberrationreliability = NULL, gamma = 0.55,
+                    rho_manual = NA, psi_manual = NA, y_limit = 5, circos=NA) {
   ch = chromosomes
   chrs = chrnames
   b = bafsegmented
@@ -1204,12 +1204,9 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, gender, SNPpos, chromo
   }
   
   if(nropt>0) {
-    #plot Sunrise
-    if (!is.na(distancepng)) {
-      png(filename = distancepng, width = 1000, height = 1000, res = 1000/7)
-    }
-    ascat.plotSunrise(d,psi_opt1,rho_opt1)
-    if (!is.na(distancepng)) {
+    if (!is.null(distance)) {
+      pdf(file = distance, width = 7, height = 7)
+      ascat.plotSunrise(d,psi_opt1,rho_opt1)
       dev.off()
     }
     
@@ -1217,7 +1214,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, gender, SNPpos, chromo
     psi = psi_opt1
     SNPposhet = SNPpos[names(bafsegmented),]
     haploidchrs = unique(c(substring(gender,1,1),substring(gender,2,2)))
-    if(substring(gender,1,1)==substring(gender,2,2)) {
+    if (substring(gender,1,1)==substring(gender,2,2)) {
       haploidchrs = setdiff(haploidchrs,substring(gender,1,1))
     }
     diploidprobes = !(SNPposhet[,1]%in%haploidchrs)
@@ -1255,22 +1252,10 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, gender, SNPpos, chromo
       }
     }
     
-    if (is.na(nonroundedprofilepng)) {
-      dev.new(10,5)
-    }
-    else {
-      if(pdfPlot){
-        pdf(file = nonroundedprofilepng, width = 20, height = y_limit, pointsize=20)
-      }
-      else{
-        png(filename = nonroundedprofilepng, width = 2000, height = (y_limit*100), res = 200)
-      }
-    }
-    
-    ascat.plotNonRounded(ploidy_opt1, rho_opt1, goodnessOfFit_opt1, nonaberrant, nAfull, nBfull, y_limit, bafsegmented, ch,lrr, chrnames)
-    
-    if (!is.na(nonroundedprofilepng)) {
-      dev.off()
+    if (!is.null(nonroundedprofile)) {
+        pdf(file = nonroundedprofile, width = 20, height = y_limit, pointsize=20)
+    	ascat.plotNonRounded(ploidy_opt1, rho_opt1, goodnessOfFit_opt1, nonaberrant, nAfull, nBfull, y_limit, bafsegmented, ch,lrr, chrnames)
+    	dev.off()
     }
     
     rho = rho_opt1
@@ -1444,28 +1429,15 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, gender, SNPpos, chromo
     
     
     # plot ASCAT profile
-    if (is.na(copynumberprofilespng)) {
-      dev.new(10,2.5)
-    }
-    else {
-      if(pdfPlot){
-        pdf(file = copynumberprofilespng, width = 20, height = y_limit, pointsize=20)
-      }
-      else{
-        png(filename = copynumberprofilespng, width = 2000, height = (y_limit*100), res = 200)
-      }
-    }
-    #plot ascat profile
-    ascat.plotAscatProfile(n1all, n2all, heteroprobes, ploidy_opt1, rho_opt1, goodnessOfFit_opt1, nonaberrant,y_limit, ch, lrr, bafsegmented, chrnames)
-    
-    
-    if (!is.na(copynumberprofilespng)) {
-      dev.off()
+    if (!is.null(copynumberprofile)) {
+    	pdf(file = copynumberprofile, width = 20, height = y_limit, pointsize=20)
+    	ascat.plotAscatProfile(n1all, n2all, heteroprobes, ploidy_opt1, rho_opt1, goodnessOfFit_opt1, nonaberrant,y_limit, ch, lrr, bafsegmented, chrnames)
+        dev.off()
     }
     
     
-    if (!is.na(aberrationreliabilitypng)) {
-      png(filename = aberrationreliabilitypng, width = 2000, height = 500, res = 200)
+    if (!is.null(aberrationreliability)) {
+      pdf(file = aberrationreliability, width = 200, height = y_limit, pointsize=20)
       par(mar = c(0.5,5,5,0.5), cex = 0.4, cex.main=3, cex.axis = 2.5)
       
       diploidprobes = !(SNPposhet[,1]%in%haploidchrs)
@@ -1504,16 +1476,12 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, gender, SNPpos, chromo
     return(list(rho = rho_opt1, psi = psi_opt1, goodnessOfFit = goodnessOfFit_opt1, nonaberrant = nonaberrant,
                 nA = n1all, nB = n2all, seg = seg, seg_raw = seg_raw, distance_matrix = d))
     
-  }
-  
-  else {
+  } else {
     
-    name=gsub(".sunrise.png","",basename(distancepng))
-    
-    png(filename = distancepng, width = 1000, height = 1000, res = 1000/7)
+    pdf(file = distance, width = 7, height = 7)
     ascat.plotSunrise(d,0,0)
     dev.off()
-    
+        
     warning(paste("ASCAT could not find an optimal ploidy and cellularity value for sample ", name, ".\n", sep=""))
     return(list(rho = NA, psi = NA, goodnessOfFit = NA, nonaberrant = F, nA = NA, nB = NA, seg = NA, seg_raw = NA, distance_matrix = NA))
   }
@@ -1531,26 +1499,32 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, gender, SNPpos, chromo
 #' @export
 ascat.plotSunrise<-function(d, psi_opt1, rho_opt1, minim=T){
   
-  par(mar = c(5,5,0.5,0.5), cex=0.75, cex.lab=2, cex.axis=2)
+  par(mar = c(6.1, 6.5, 4.1, 1.1), cex = 0.75, cex.lab = 1.5, cex.axis = 1.5)
   
   if(minim){
     hmcol = rev(colorRampPalette(RColorBrewer::brewer.pal(10, "RdBu"))(256))
   } else {
     hmcol = colorRampPalette(RColorBrewer::brewer.pal(10, "RdBu"))(256)
   } 
-  image(log(d), col = hmcol, axes = F, xlab = "Ploidy", ylab = "Aberrant cell fraction")
+  image(log(d), col = hmcol, axes = F, xlab = "", ylab = "")
+  mtext(side = 1, text = "Ploidy", line = 4, cex = 1.5)
+  mtext(side = 2, text = "Aberrant cell fraction", line = 4.25, cex = 1.5)
+  
+
   
   ploidy_min<-as.numeric(rownames(d)[1])
   ploidy_max<-as.numeric(rownames(d)[nrow(d)])
   purity_min<-as.numeric(colnames(d)[1])
   purity_max<-as.numeric(colnames(d)[ncol(d)])
   
-  axis(1, at = seq(0, 1, by = 1/(ploidy_max-1)), labels = seq(ploidy_min, ploidy_max, by = 1))
-  axis(2, at = seq(0, 1/purity_max, by = 1/3/purity_max), labels = seq(purity_min, purity_max, by = 3/10))
+  axis(1, at = seq(0, 1, by = 1/(ploidy_max-1)), labels = seq(ploidy_min, ploidy_max, by = 1), las=1)
+  axis(2, at = seq(0, 1/purity_max, by = 1/3/purity_max), labels = seq(purity_min, purity_max, by = 3/10), las=1)
   
   if(psi_opt1>0 && rho_opt1>0){
     points((psi_opt1-ploidy_min)/(ploidy_max-1),(rho_opt1-purity_min)/(1/purity_max),col="green",pch="X", cex = 2)
   }
+  box(lwd = 2)
+  
 }
 
 
